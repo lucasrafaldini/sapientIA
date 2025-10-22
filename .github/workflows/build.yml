@@ -1,0 +1,31 @@
+name: build
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build Go
+        run: |
+          go mod download
+          go build ./...
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Python deps (worker)
+        run: |
+          python -m pip install -U pip
+          pip install -r worker/requirements.txt || true

@@ -5,7 +5,7 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/yourorg/sapientia)](go.mod)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> “*Sapientia est intellegentia quae audit.*”  
+> “_Sapientia est intellegentia quae audit._”  
 > **Sabedoria é a inteligência que escuta.**
 
 ---
@@ -19,7 +19,7 @@ Transforma briefs, entrevistas e respostas abertas em **árvores semânticas**, 
 
 ---
 
-##  Como funciona
+## Como funciona
 
 1. **Briefing**  
    Faça upload de uma gravação de reunião ou texto-base. O sistema transcreve, identifica dores e temas e gera uma **árvore semântica** do discurso.
@@ -40,21 +40,21 @@ Transforma briefs, entrevistas e respostas abertas em **árvores semânticas**, 
 
 ## Stack (v1)
 
-| Camada      | Tecnologia                                 | Função                                          |
-|-------------|---------------------------------------------|--------------------------------------------------|
-| **Core**    | Go 1.22+, Gonum, SQLC                       | Pipelines, grafos, cálculo e persistência       |
-| **Worker**  | Python (spaCy pt-BR, KeyBERT, Whisper)      | Lematização, embeddings e transcrição           |
-| **API**     | Chi (Go) + Asynq (Redis)                    | Orquestração de jobs e serviços                 |
-| **Frontend**| Next.js, Tailwind, Cytoscape.js             | Dashboards e grafos interativos                 |
-| **Relatórios** | Go templates + (wkhtmltopdf/WeasyPrint) | Exportações HTML/PDF                             |
-| **Infra**   | Docker Compose                              | Ambiente reprodutível                           |
+| Camada         | Tecnologia                              | Função                                    |
+| -------------- | --------------------------------------- | ----------------------------------------- |
+| **Core**       | Go 1.22+, Gonum, SQLC                   | Pipelines, grafos, cálculo e persistência |
+| **Worker**     | Python (spaCy pt-BR, KeyBERT, Whisper)  | Lematização, embeddings e transcrição     |
+| **API**        | Chi (Go) + Asynq (Redis)                | Orquestração de jobs e serviços           |
+| **Frontend**   | Next.js, Tailwind, Cytoscape.js         | Dashboards e grafos interativos           |
+| **Relatórios** | Go templates + (wkhtmltopdf/WeasyPrint) | Exportações HTML/PDF                      |
+| **Infra**      | Docker Compose                          | Ambiente reprodutível                     |
 
-> **Visão de longo prazo:** manter **binário único** (Go) que auto-extrai o *worker* e baixa modelos sob demanda.  
+> **Visão de longo prazo:** manter **binário único** (Go) que auto-extrai o _worker_ e baixa modelos sob demanda.  
 > **IA avançada (LLMs) prevista** para v5/v6, após validação com clientes.
 
 ---
 
-##  Começando
+## Começando
 
 ```bash
 # Clone o repositório
@@ -88,14 +88,22 @@ sapientia/
 ```
 
 ## Roadmap
-| Versão | Foco principal                                       | Status          |
-| -----: | ---------------------------------------------------- | --------------- |
-|   v0.1 | CLI + pipeline YAML + coocorrência + export GEXF     | Em dev          |
-|   v0.2 | API Go + UI web + grafos interativos                 | Planejado       |
-|   v0.3 | χ², AFC/SVD, relatórios completos (HTML/PDF)         | Planejado       |
-|   v1.0 | Binário único (Go + worker embutido + model manager) | Meta de release |
-|  v5/v6 | LLMs para insights/assistência analítica             | Longo prazo     |
----
+
+| Versão | Foco principal                                       | Status          | Progresso           |
+| -----: | ---------------------------------------------------- | --------------- | ------------------- |
+|   v0.1 | CLI + pipeline YAML + coocorrência + export GEXF     | 🔄 Em dev       | 31% (2.17/7 issues) |
+|   v0.2 | API Go + UI web + grafos interativos                 | ⏳ Planejado    | -                   |
+|   v0.3 | χ², AFC/SVD, relatórios completos (HTML/PDF)         | ⏳ Planejado    | -                   |
+|   v1.0 | Binário único (Go + worker embutido + model manager) | 🎯 Meta release | -                   |
+|  v5/v6 | LLMs para insights/assistência analítica             | 🔮 Longo prazo  | -                   |
+
+### v0.1 - Issues Concluídas
+
+- ✅ **#1**: CLI 'sapientia run' + parser de pipeline YAML + executor ([PR #8](https://github.com/lucasrafaldini/sapientIA/pull/8))
+
+➡️ Veja o roadmap completo e critérios por versão em [ROADMAP.md](ROADMAP.md).  
+📋 Acompanhe o progresso da v0.1 no [Project Board](https://github.com/users/lucasrafaldini/projects/1).  
+📊 Status detalhado em [docs/roadmap/STATUS.md](docs/roadmap/STATUS.md).
 
 ## Exemplos de uso (CLI)
 

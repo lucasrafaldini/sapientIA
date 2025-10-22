@@ -1,0 +1,23 @@
+name: "🛠️ Task"
+description: Tarefa técnica, refactor, docs ou infra
+labels: ["kind:refactor"]
+body:
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+      description: O que será feito e por quê?
+  - type: textarea
+    id: entregaveis
+    attributes:
+      label: Entregáveis
+      description: O que deve estar pronto ao final? (arquivos, endpoints, comandos)
+  - type: textarea
+    id: riscos
+    attributes:
+      label: Riscos e dependências
+  - type: input
+    id: roadmap
+    attributes:
+      label: Versão do roadmap
+      description: A que versão este item pertence? (ex.: v0.1, v0.2)
