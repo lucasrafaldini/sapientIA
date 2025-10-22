@@ -10,7 +10,7 @@ func TestLoadPipeline(t *testing.T) {
 	// Criar arquivo temporário de pipeline
 	tmpDir := t.TempDir()
 	yamlPath := filepath.Join(tmpDir, "test.yaml")
-	
+
 	yamlContent := `name: test-pipeline
 description: Pipeline de teste
 version: "1.0"
@@ -22,30 +22,30 @@ steps:
 config:
   output_dir: runs/test
 `
-	
+
 	if err := os.WriteFile(yamlPath, []byte(yamlContent), 0644); err != nil {
 		t.Fatalf("Erro ao criar arquivo de teste: %v", err)
 	}
-	
+
 	// Testar LoadPipeline
 	p, err := LoadPipeline(yamlPath)
 	if err != nil {
 		t.Fatalf("LoadPipeline falhou: %v", err)
 	}
-	
+
 	// Verificar campos
 	if p.Name != "test-pipeline" {
 		t.Errorf("Nome esperado 'test-pipeline', obteve '%s'", p.Name)
 	}
-	
+
 	if p.Description != "Pipeline de teste" {
 		t.Errorf("Descrição esperada 'Pipeline de teste', obteve '%s'", p.Description)
 	}
-	
+
 	if len(p.Steps) != 1 {
 		t.Errorf("Esperado 1 step, obteve %d", len(p.Steps))
 	}
-	
+
 	if len(p.Steps) > 0 {
 		step := p.Steps[0]
 		if step.Name != "ingest" {
@@ -83,7 +83,7 @@ func TestValidate_Success(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := p.Validate()
 	if err != nil {
 		t.Errorf("Validate falhou inesperadamente: %v", err)
@@ -98,7 +98,7 @@ func TestValidate_EmptyName(t *testing.T) {
 			{Name: "step1", Type: "ingest"},
 		},
 	}
-	
+
 	err := p.Validate()
 	if err == nil {
 		t.Error("Esperado erro para nome vazio")
@@ -111,7 +111,7 @@ func TestValidate_NoSteps(t *testing.T) {
 		Version: "1.0",
 		Steps:   []Step{},
 	}
-	
+
 	err := p.Validate()
 	if err == nil {
 		t.Error("Esperado erro para pipeline sem steps")
@@ -126,7 +126,7 @@ func TestValidate_EmptyStepName(t *testing.T) {
 			{Name: "", Type: "ingest"},
 		},
 	}
-	
+
 	err := p.Validate()
 	if err == nil {
 		t.Error("Esperado erro para step sem nome")
@@ -141,7 +141,7 @@ func TestValidate_EmptyStepType(t *testing.T) {
 			{Name: "step1", Type: ""},
 		},
 	}
-	
+
 	err := p.Validate()
 	if err == nil {
 		t.Error("Esperado erro para step sem type")
@@ -156,7 +156,7 @@ func TestValidate_InvalidStepType(t *testing.T) {
 			{Name: "step1", Type: "invalid-type"},
 		},
 	}
-	
+
 	err := p.Validate()
 	if err == nil {
 		t.Error("Esperado erro para tipo de step inválido")
@@ -165,7 +165,7 @@ func TestValidate_InvalidStepType(t *testing.T) {
 
 func TestValidate_AllStepTypes(t *testing.T) {
 	validTypes := []string{"ingest", "lexical", "graph", "tree", "report"}
-	
+
 	for _, stepType := range validTypes {
 		p := &Pipeline{
 			Name:    "test-" + stepType,
@@ -174,7 +174,7 @@ func TestValidate_AllStepTypes(t *testing.T) {
 				{Name: "step1", Type: stepType},
 			},
 		}
-		
+
 		err := p.Validate()
 		if err != nil {
 			t.Errorf("Validate falhou para tipo válido '%s': %v", stepType, err)

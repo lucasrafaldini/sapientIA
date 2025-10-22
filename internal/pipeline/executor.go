@@ -83,7 +83,7 @@ func (e *Executor) executeIngest(step *Step) error {
 	fmt.Printf("   📥 Input: %s\n", step.Input)
 	fmt.Printf("   📤 Output: %s\n", step.Output)
 	fmt.Println("   ⚠️  Ingest ainda não implementado (v0.1)")
-	
+
 	// Criar arquivo de output vazio como placeholder
 	if step.Output != "" {
 		if err := e.ensureOutputDir(step.Output); err != nil {
@@ -101,7 +101,7 @@ func (e *Executor) executeLexical(step *Step) error {
 	fmt.Printf("   📥 Input: %s\n", step.Input)
 	fmt.Printf("   📤 Output: %s\n", step.Output)
 	fmt.Println("   ⚠️  Lexical ainda não implementado (v0.1)")
-	
+
 	if step.Output != "" {
 		if err := e.ensureOutputDir(step.Output); err != nil {
 			return err
@@ -118,7 +118,7 @@ func (e *Executor) executeGraph(step *Step) error {
 	fmt.Printf("   📥 Input: %s\n", step.Input)
 	fmt.Printf("   📤 Output: %s\n", step.Output)
 	fmt.Println("   ⚠️  Graph ainda não implementado (v0.1)")
-	
+
 	if step.Output != "" {
 		if err := e.ensureOutputDir(step.Output); err != nil {
 			return err
@@ -143,7 +143,7 @@ func (e *Executor) executeTree(step *Step) error {
 	fmt.Printf("   📥 Input: %s\n", step.Input)
 	fmt.Printf("   📤 Output: %s\n", step.Output)
 	fmt.Println("   ⚠️  Tree ainda não implementado (v0.1)")
-	
+
 	if step.Output != "" {
 		if err := e.ensureOutputDir(step.Output); err != nil {
 			return err
@@ -160,7 +160,7 @@ func (e *Executor) executeReport(step *Step) error {
 	fmt.Printf("   📥 Input: %s\n", step.Input)
 	fmt.Printf("   📤 Output: %s\n", step.Output)
 	fmt.Println("   ⚠️  Report ainda não implementado (v0.1)")
-	
+
 	if step.Output != "" {
 		if err := e.ensureOutputDir(step.Output); err != nil {
 			return err
