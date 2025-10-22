@@ -1,0 +1,13 @@
+Este é um exemplo de briefing para análise.
+
+O projeto SapientIA visa transformar conversas corporativas em insights acionáveis. Queremos entender as principais dores e necessidades dos clientes em relação à análise de dados textuais. 
+
+As equipes atualmente usam ferramentas fragmentadas como Excel, Gephi e IRaMuTeQ. O processo é manual e demorado. Há dificuldade em consolidar resultados e gerar relatórios executivos.
+
+Nossa proposta é criar uma plataforma integrada que automatize o fluxo completo: desde a transcrição de entrevistas até a geração de árvores semânticas e grafos de coocorrência.
+
+Os principais desafios incluem:
+- Integração entre diferentes tecnologias (Go, Python, Node)
+- Qualidade do processamento de linguagem natural em português
+- Interface intuitiva para usuários não técnicos
+- Performance em datasets médios a grandes

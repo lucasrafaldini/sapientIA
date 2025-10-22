@@ -1,0 +1,32 @@
+name: "✨ Feature Request"
+description: Proponha uma nova funcionalidade ou melhoria
+labels: ["kind:feature"]
+body:
+  - type: input
+    id: contexto
+    attributes:
+      label: Contexto e problema
+      description: Qual é a necessidade do usuário e o problema a resolver?
+      placeholder: Ex. Como analista, preciso...
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Proposta de solução
+      description: Descreva a solução sugerida (UI/API/CLI, fluxos, exemplos)
+  - type: textarea
+    id: impacto
+    attributes:
+      label: Impacto e valor
+      description: Qual valor entrega? Há métricas ou critérios de sucesso?
+  - type: checkboxes
+    id: escopo
+    attributes:
+      label: Escopo inicial
+      options:
+        - label: Defini requisitos mínimos (MVP)
+        - label: Listei riscos e dependências
+  - type: input
+    id: roadmap
+    attributes:
+      label: Versão do roadmap
+      description: A que versão este item pertence? (ex.: v0.1, v0.2)

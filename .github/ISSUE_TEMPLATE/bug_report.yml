@@ -1,0 +1,36 @@
+name: "🐞 Bug Report"
+description: Relate um problema para corrigirmos
+labels: ["kind:bug"]
+body:
+  - type: input
+    id: versao
+    attributes:
+      label: Versão/commit
+      description: Informe a versão do SapientIA ou o SHA do commit
+  - type: textarea
+    id: descricao
+    attributes:
+      label: Descrição do bug
+      description: O que aconteceu? O que você esperava que acontecesse?
+  - type: textarea
+    id: reproducao
+    attributes:
+      label: Passos para reproduzir
+      description: Liste passos claros (com dados de exemplo se possível)
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs/erros
+      description: Cole aqui mensagens relevantes (ou anexe arquivos)
+  - type: textarea
+    id: ambiente
+    attributes:
+      label: Ambiente
+      description: SO, versão do Go/Python/Node, Docker, etc.
+  - type: checkboxes
+    id: escopo
+    attributes:
+      label: Checklist
+      options:
+        - label: Verifiquei no branch main
+        - label: Procurei Issues existentes
