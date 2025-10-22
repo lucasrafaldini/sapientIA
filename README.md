@@ -99,7 +99,7 @@ sapientia/
 
 ### v0.1 - Issues Concluídas
 
-- ✅ **#1**: CLI 'sapientia run' + parser de pipeline YAML + executor
+- ✅ **#1**: CLI 'sapientia run' + parser de pipeline YAML + executor ([PR #8](https://github.com/lucasrafaldini/sapientIA/pull/8))
 
 ➡️ Veja o roadmap completo e critérios por versão em [ROADMAP.md](ROADMAP.md).  
 📋 Acompanhe o progresso da v0.1 no [Project Board](https://github.com/users/lucasrafaldini/projects/1).  

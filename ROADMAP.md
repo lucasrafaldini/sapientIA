@@ -11,16 +11,16 @@ Este roadmap detalha os marcos planejados, critérios de conclusão e prioridade
 
 ## Visão geral por versão
 
-| Versão | Foco principal                                       | Status         | Progresso    |
-| -----: | ---------------------------------------------------- | -------------- | ------------ |
-|   v0.1 | CLI + pipeline YAML + coocorrência + export GEXF     | 🔄 Em dev      | 31% (2.17/7) |
-|   v0.2 | API Go + UI web (gráficos interativos) + jobs/queue  | ⏳ Planejado   | -            |
-|   v0.3 | χ²/PMI/AFC/SVD + relatórios HTML/PDF completos       | ⏳ Planejado   | -            |
-|   v0.4 | Persistência (Postgres), observabilidade, e2e        | ⏳ Planejado   | -            |
-|   v0.5 | Ingestões/integrações (Drive/S3), STT Whisper, spaCy | ⏳ Planejado   | -            |
-|   v0.6 | Performance, UX e RBAC                               | ⏳ Planejado   | -            |
-|   v1.0 | Binário único (Go + worker embutido/auto-download)   | 🎯 Meta        | -            |
-|  v5/v6 | LLMs para insights/assistência analítica             | 🔮 Longo prazo | -            |
+| Versão | Foco principal                                       | Status         | Progresso           |
+| -----: | ---------------------------------------------------- | -------------- | ------------------- |
+|   v0.1 | CLI + pipeline YAML + coocorrência + export GEXF     | 🔄 Em dev      | 31% (2.17/7 issues) |
+|   v0.2 | API Go + UI web (gráficos interativos) + jobs/queue  | ⏳ Planejado   | -                   |
+|   v0.3 | χ²/PMI/AFC/SVD + relatórios HTML/PDF completos       | ⏳ Planejado   | -                   |
+|   v0.4 | Persistência (Postgres), observabilidade, e2e        | ⏳ Planejado   | -                   |
+|   v0.5 | Ingestões/integrações (Drive/S3), STT Whisper, spaCy | ⏳ Planejado   | -                   |
+|   v0.6 | Performance, UX e RBAC                               | ⏳ Planejado   | -                   |
+|   v1.0 | Binário único (Go + worker embutido/auto-download)   | 🎯 Meta        | -                   |
+|  v5/v6 | LLMs para insights/assistência analítica             | 🔮 Longo prazo | -                   |
 
 ---
 
@@ -54,7 +54,7 @@ Riscos/mitigações:
 
 ### ✅ Issues Concluídas na v0.1
 
-- **#1**: CLI 'sapientia run' + parser de pipeline YAML + executor (concluída em 21/10/2025)
+- **#1**: CLI 'sapientia run' + parser de pipeline YAML + executor ([PR #8](https://github.com/lucasrafaldini/sapientIA/pull/8), concluída em 21/10/2025)
 
 ---
 
