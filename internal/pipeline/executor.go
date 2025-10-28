@@ -13,16 +13,23 @@ import (
 
 // Executor executa um pipeline completo
 type Executor struct {
-	pipeline *Pipeline
-	workDir  string
+	pipeline         *Pipeline
+	workDir          string
+	stopwordsProfile string // perfil CLI (core/extended/aggressive)
 }
 
 // NewExecutor cria um novo executor para o pipeline
 func NewExecutor(p *Pipeline) *Executor {
 	return &Executor{
-		pipeline: p,
-		workDir:  ".",
+		pipeline:         p,
+		workDir:          ".",
+		stopwordsProfile: "core", // padrão
 	}
+}
+
+// SetStopwordsProfile define o perfil de stopwords para todos os steps (sobrescreve YAML)
+func (e *Executor) SetStopwordsProfile(profile string) {
+	e.stopwordsProfile = profile
 }
 
 // Execute executa o pipeline completo
@@ -173,6 +180,10 @@ func (e *Executor) executeLexical(step *Step) error {
 			}
 		}
 	}
+	// Aplicar stopwords profile da CLI se não especificado no YAML
+	if stopwordsFile == "" && e.stopwordsProfile != "" {
+		stopwordsFile = e.resolvePath(fmt.Sprintf("data/stopwords/pt-%s.txt", e.stopwordsProfile))
+	}
 
 	// Tokenização com stopwords opcionais
 	tokens := simpleTokenizePTWithExternal(text, stopwordsFile)
@@ -274,6 +285,10 @@ func (e *Executor) executeGraph(step *Step) error {
 		if v, ok := step.Params["stopwords_file"].(string); ok {
 			stopwordsFile = e.resolvePath(v)
 		}
+	}
+	// Aplicar stopwords profile da CLI se não especificado no YAML
+	if stopwordsFile == "" && e.stopwordsProfile != "" {
+		stopwordsFile = e.resolvePath(fmt.Sprintf("data/stopwords/pt-%s.txt", e.stopwordsProfile))
 	}
 	if window < 2 {
 		window = 2
