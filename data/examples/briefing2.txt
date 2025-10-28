@@ -1,0 +1,9 @@
+Projeto Aurora: Explorando novas fronteiras de análise textual corporativa.
+
+Este é um documento de exemplo para o SapientIA. O objetivo é testar o pipeline de ingestão e análise lexical com diferentes parâmetros.
+
+Aqui descrevemos um cenário simples: uma empresa deseja transformar entrevistas e briefs em insights práticos. As equipes relatam dificuldades: trabalho manual em Excel, visualizações fragmentadas no Gephi e limitações do IRaMuTeQ. Queremos simplificar, padronizar e acelerar esse processo.
+
+Neste experimento, esperamos extrair frequências de termos, bigramas úteis e uma noção básica de relevância via TF-IDF. Não há stopwords personalizadas; utilizamos a lista padrão. Com min_freq igual a 1, esperamos ver praticamente todos os termos não bloqueados por stopwords.
+
+Fim do documento de exemplo.

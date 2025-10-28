@@ -33,6 +33,7 @@ steps:
     params:
       cooccurrence_window: 5
       min_edge_weight: 2
+      export_csv: true
 
   - name: tree
     type: tree
