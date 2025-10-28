@@ -1,0 +1,48 @@
+name: exemplo-briefing
+description: Pipeline de exemplo para análise de briefing
+version: "0.1"
+
+config:
+  output_dir: "runs/exemplo"
+  language: "pt-BR"
+
+steps:
+  - name: ingest
+    type: ingest
+    input: "data/examples/briefing.txt"
+    output: "runs/exemplo/corpus.json"
+    params:
+      encoding: "utf-8"
+      normalize: true
+
+  - name: lexical
+    type: lexical
+    input: "runs/exemplo/corpus.json"
+    output: "runs/exemplo/lexical.json"
+    params:
+      min_freq: 2
+      ngrams: [1, 2, 3]
+      tfidf: true
+
+  - name: graph
+    type: graph
+    input: "runs/exemplo/lexical.json"
+    output: "runs/exemplo/graph.gexf"
+    params:
+      cooccurrence_window: 5
+      min_edge_weight: 2
+
+  - name: tree
+    type: tree
+    input: "runs/exemplo/lexical.json"
+    output: "runs/exemplo/tree.json"
+    params:
+      max_depth: 3
+
+  - name: report
+    type: report
+    input: "runs/exemplo"
+    output: "runs/exemplo/report.html"
+    params:
+      format: "html"
+      include_graphs: true

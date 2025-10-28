@@ -1,0 +1,34 @@
+name: lint
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Go vet & fmt
+        run: |
+          go vet ./...
+          test -z "$(gofmt -l . | tee /dev/stderr)"
+
+      - name: Python ruff (optional na v0.1)
+        if: false # Desabilitado até implementação do worker (v0.2)
+        uses: chartboost/ruff-action@v1
+        with:
+          src: "worker"
+          args: "--format=github"
+        continue-on-error: true
+
+      - name: Node setup (optional na v0.1)
+        if: false # Desabilitado até implementação do UI (v0.2)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: UI lint
+        if: false # Desabilitado até implementação do UI (v0.2)
+        run: |
+          [ -d ui ] && cd ui && npm ci && npm run lint || echo "UI skip"
