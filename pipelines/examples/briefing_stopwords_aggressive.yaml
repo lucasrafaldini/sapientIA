@@ -1,0 +1,44 @@
+name: exemplo-briefing-aggressive
+description: Pipeline de exemplo (briefing2) com stopwords pt-aggressive
+version: "0.1"
+
+config:
+  output_dir: "runs/exemplo_aggr"
+  language: "pt-BR"
+
+steps:
+  - name: ingest
+    type: ingest
+    input: "data/examples/briefing2.txt"
+    output: "runs/exemplo_aggr/corpus.json"
+
+  - name: lexical
+    type: lexical
+    input: "runs/exemplo_aggr/corpus.json"
+    output: "runs/exemplo_aggr/lexical.json"
+    params:
+      min_freq: 1
+      ngrams: [2]
+      tfidf: true
+      export_csv: true
+      stopwords_file: "data/stopwords/pt-aggressive.txt"
+
+  - name: graph
+    type: graph
+    input: "runs/exemplo_aggr/lexical.json"
+    output: "runs/exemplo_aggr/graph.gexf"
+    params:
+      cooccurrence_window: 2
+      min_edge_weight: 1
+      export_csv: true
+      stopwords_file: "data/stopwords/pt-aggressive.txt"
+
+  - name: tree
+    type: tree
+    input: "runs/exemplo_aggr/lexical.json"
+    output: "runs/exemplo_aggr/tree.json"
+
+  - name: report
+    type: report
+    input: "runs/exemplo_aggr"
+    output: "runs/exemplo_aggr/report.html"

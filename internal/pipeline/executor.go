@@ -13,16 +13,23 @@ import (
 
 // Executor executa um pipeline completo
 type Executor struct {
-	pipeline *Pipeline
-	workDir  string
+	pipeline         *Pipeline
+	workDir          string
+	stopwordsProfile string // perfil CLI (core/extended/aggressive)
 }
 
 // NewExecutor cria um novo executor para o pipeline
 func NewExecutor(p *Pipeline) *Executor {
 	return &Executor{
-		pipeline: p,
-		workDir:  ".",
+		pipeline:         p,
+		workDir:          ".",
+		stopwordsProfile: "core", // padrão
 	}
+}
+
+// SetStopwordsProfile define o perfil de stopwords para todos os steps (sobrescreve YAML)
+func (e *Executor) SetStopwordsProfile(profile string) {
+	e.stopwordsProfile = profile
 }
 
 // Execute executa o pipeline completo
@@ -56,7 +63,7 @@ func (e *Executor) Execute() error {
 		}
 
 		elapsed := time.Since(start)
-		fmt.Printf("   ✅ Concluído em %.2fs\n\n", elapsed.Seconds())
+		fmt.Printf("   ✅ Concluído em %s\n\n", formatElapsed(elapsed))
 	}
 
 	fmt.Println("🎉 Pipeline executado com sucesso!")
@@ -90,9 +97,10 @@ func (e *Executor) executeIngest(step *Step) error {
 	if step.Input == "" {
 		return fmt.Errorf("ingest: input é obrigatório")
 	}
-	data, err := os.ReadFile(step.Input)
+	inputPath := e.resolvePath(step.Input)
+	data, err := os.ReadFile(inputPath)
 	if err != nil {
-		return fmt.Errorf("ingest: erro ao ler input '%s': %w", step.Input, err)
+		return fmt.Errorf("ingest: erro ao ler input '%s': %w", inputPath, err)
 	}
 
 	// Criar corpus JSON mínimo
@@ -102,10 +110,11 @@ func (e *Executor) executeIngest(step *Step) error {
 	if step.Output == "" {
 		return fmt.Errorf("ingest: output é obrigatório")
 	}
-	if err := e.ensureOutputDir(step.Output); err != nil {
+	outputPath := e.resolvePath(step.Output)
+	if err := e.ensureOutputDir(outputPath); err != nil {
 		return err
 	}
-	if err := os.WriteFile(step.Output, []byte(corpus), 0644); err != nil {
+	if err := os.WriteFile(outputPath, []byte(corpus), 0644); err != nil {
 		return fmt.Errorf("erro ao criar output: %w", err)
 	}
 	return nil
@@ -120,9 +129,10 @@ func (e *Executor) executeLexical(step *Step) error {
 	if step.Input == "" {
 		return fmt.Errorf("lexical: input é obrigatório")
 	}
-	b, err := os.ReadFile(step.Input)
+	inputPath := e.resolvePath(step.Input)
+	b, err := os.ReadFile(inputPath)
 	if err != nil {
-		return fmt.Errorf("lexical: erro ao ler input '%s': %w", step.Input, err)
+		return fmt.Errorf("lexical: erro ao ler input '%s': %w", inputPath, err)
 	}
 
 	// Parse simples do corpus (sem dependências): procurar campo "text"
@@ -148,23 +158,31 @@ func (e *Executor) executeLexical(step *Step) error {
 			exportCSV = v
 		}
 		if v, ok := step.Params["stopwords_file"].(string); ok {
-			stopwordsFile = v
+			stopwordsFile = e.resolvePath(v)
 		}
 		if arr, ok := step.Params["ngrams"].([]any); ok {
 			ngramsList = make([]int, 0, len(arr))
 			for _, x := range arr {
 				switch t := x.(type) {
 				case int:
-					if t >= 1 { ngramsList = append(ngramsList, t) }
+					if t >= 1 {
+						ngramsList = append(ngramsList, t)
+					}
 				case float64:
 					iv := int(t)
-					if iv >= 1 { ngramsList = append(ngramsList, iv) }
+					if iv >= 1 {
+						ngramsList = append(ngramsList, iv)
+					}
 				}
 			}
 			if len(ngramsList) == 0 {
 				ngramsList = []int{2}
 			}
 		}
+	}
+	// Aplicar stopwords profile da CLI se não especificado no YAML
+	if stopwordsFile == "" && e.stopwordsProfile != "" {
+		stopwordsFile = e.resolvePath(fmt.Sprintf("data/stopwords/pt-%s.txt", e.stopwordsProfile))
 	}
 
 	// Tokenização com stopwords opcionais
@@ -173,7 +191,9 @@ func (e *Executor) executeLexical(step *Step) error {
 	freq := countFreq(tokens)
 	if minFreq > 1 {
 		for k, v := range freq {
-			if v < minFreq { delete(freq, k) }
+			if v < minFreq {
+				delete(freq, k)
+			}
 		}
 	}
 	// N-grams
@@ -185,7 +205,9 @@ func (e *Executor) executeLexical(step *Step) error {
 		ng := ngrams(tokens, n)
 		if minFreq > 1 {
 			for k, v := range ng {
-				if v < minFreq { delete(ng, k) }
+				if v < minFreq {
+					delete(ng, k)
+				}
 			}
 		}
 		ngramsByN[n] = ng
@@ -204,23 +226,26 @@ func (e *Executor) executeLexical(step *Step) error {
 	if step.Output == "" {
 		return fmt.Errorf("lexical: output é obrigatório")
 	}
-	if err := e.ensureOutputDir(step.Output); err != nil {
+	outputPath := e.resolvePath(step.Output)
+	if err := e.ensureOutputDir(outputPath); err != nil {
 		return err
 	}
-	if err := os.WriteFile(step.Output, []byte(out), 0644); err != nil {
+	if err := os.WriteFile(outputPath, []byte(out), 0644); err != nil {
 		return fmt.Errorf("erro ao criar output: %w", err)
 	}
 
 	// Exportar CSVs opcionais
 	if exportCSV {
-		baseDir := filepath.Dir(step.Output)
+		baseDir := filepath.Dir(outputPath)
 		if len(freq) > 0 {
 			if err := writeCSVCounts(filepath.Join(baseDir, "lexical_freq.csv"), freq); err != nil {
 				return err
 			}
 		}
 		for n, m := range ngramsByN {
-			if len(m) == 0 { continue }
+			if len(m) == 0 {
+				continue
+			}
 			if err := writeCSVCounts(filepath.Join(baseDir, fmt.Sprintf("lexical_ngrams_%d.csv", n)), m); err != nil {
 				return err
 			}
@@ -233,22 +258,186 @@ func (e *Executor) executeLexical(step *Step) error {
 func (e *Executor) executeGraph(step *Step) error {
 	fmt.Printf("   📥 Input: %s\n", step.Input)
 	fmt.Printf("   📤 Output: %s\n", step.Output)
-	fmt.Println("   ⚠️  Graph ainda não implementado (v0.1)")
 
-	if step.Output != "" {
-		if err := e.ensureOutputDir(step.Output); err != nil {
+	// Parâmetros
+	window := 2
+	minEdge := 1
+	exportCSV := false
+	corpusPath := ""
+	stopwordsFile := ""
+	if step.Params != nil {
+		if v, ok := step.Params["cooccurrence_window"].(int); ok {
+			window = v
+		} else if fv, ok := step.Params["cooccurrence_window"].(float64); ok {
+			window = int(fv)
+		}
+		if v, ok := step.Params["min_edge_weight"].(int); ok {
+			minEdge = v
+		} else if fv, ok := step.Params["min_edge_weight"].(float64); ok {
+			minEdge = int(fv)
+		}
+		if v, ok := step.Params["export_csv"].(bool); ok {
+			exportCSV = v
+		}
+		if v, ok := step.Params["corpus"].(string); ok {
+			corpusPath = v
+		}
+		if v, ok := step.Params["stopwords_file"].(string); ok {
+			stopwordsFile = e.resolvePath(v)
+		}
+	}
+	// Aplicar stopwords profile da CLI se não especificado no YAML
+	if stopwordsFile == "" && e.stopwordsProfile != "" {
+		stopwordsFile = e.resolvePath(fmt.Sprintf("data/stopwords/pt-%s.txt", e.stopwordsProfile))
+	}
+	if window < 2 {
+		window = 2
+	}
+	if minEdge < 1 {
+		minEdge = 1
+	}
+
+	inputPath := e.resolvePath(step.Input)
+	outputPath := e.resolvePath(step.Output)
+
+	// Descobrir corpus.json se não fornecido
+	if corpusPath == "" {
+		baseDir := filepath.Dir(inputPath)
+		guess := filepath.Join(baseDir, "corpus.json")
+		if _, err := os.Stat(guess); err == nil {
+			corpusPath = guess
+		}
+	} else {
+		corpusPath = e.resolvePath(corpusPath)
+	}
+
+	// Ler tokens do corpus ou, como fallback, derivar arestas de ngrams_2 do lexical
+	var tokens []string
+	var freq map[string]int
+	if corpusPath != "" {
+		cb, err := os.ReadFile(corpusPath)
+		if err != nil {
+			return fmt.Errorf("graph: erro lendo corpus '%s': %w", corpusPath, err)
+		}
+		text := extractFirstTextField(string(cb))
+		tokens = simpleTokenizePTWithExternal(text, stopwordsFile)
+		freq = countFreq(tokens)
+	} else {
+		// Fallback: usar lexical.json para nós (freq) e arestas (ngrams_2) se existir
+		lb, err := os.ReadFile(inputPath)
+		if err != nil {
+			return fmt.Errorf("graph: erro lendo lexical '%s': %w", inputPath, err)
+		}
+		var parsed map[string]any
+		if err := json.Unmarshal(lb, &parsed); err != nil {
+			return fmt.Errorf("graph: erro parse lexical.json: %w", err)
+		}
+		// freq
+		freq = map[string]int{}
+		if f, ok := parsed["freq"].(map[string]any); ok {
+			for k, v := range f {
+				switch t := v.(type) {
+				case float64:
+					freq[k] = int(t)
+				case int:
+					freq[k] = t
+				}
+			}
+		}
+		// tokens vazio; usaremos ngrams_2 como arestas
+	}
+
+	// Coocorrência
+	edges := map[[2]string]int{}
+	if len(tokens) > 0 {
+		for i := 0; i < len(tokens); i++ {
+			for d := 1; d < window && i+d < len(tokens); d++ {
+				a, b := tokens[i], tokens[i+d]
+				if a == b {
+					continue
+				}
+				// aresta não-direcionada com ordenação estável
+				if a > b {
+					a, b = b, a
+				}
+				edges[[2]string{a, b}]++
+			}
+		}
+	} else {
+		// Fallback: usar ngrams_2 como arestas
+		lb, err := os.ReadFile(inputPath)
+		if err != nil {
+			return fmt.Errorf("graph: erro lendo lexical '%s': %w", inputPath, err)
+		}
+		var parsed map[string]any
+		if err := json.Unmarshal(lb, &parsed); err != nil {
+			return fmt.Errorf("graph: erro parse lexical.json: %w", err)
+		}
+		if ng2, ok := parsed["ngrams_2"].(map[string]any); ok {
+			for k, v := range ng2 {
+				parts := strings.Split(k, " ")
+				if len(parts) != 2 {
+					continue
+				}
+				a, b := parts[0], parts[1]
+				if a > b {
+					a, b = b, a
+				}
+				w := 0
+				switch t := v.(type) {
+				case float64:
+					w = int(t)
+				case int:
+					w = t
+				}
+				if w > 0 {
+					edges[[2]string{a, b}] += w
+				}
+			}
+		}
+	}
+
+	// Filtrar por min_edge_weight
+	for k, w := range edges {
+		if w < minEdge {
+			delete(edges, k)
+		}
+	}
+
+	// Geração de IDs de nós
+	nodeID := map[string]int{}
+	nodes := []string{}
+	nextID := 0
+	// Inicializar nós a partir das arestas
+	for pair := range edges {
+		for _, term := range pair {
+			if _, ok := nodeID[term]; !ok {
+				nodeID[term] = nextID
+				nodes = append(nodes, term)
+				nextID++
+			}
+		}
+	}
+
+	// Criar diretório de output
+	if err := e.ensureOutputDir(outputPath); err != nil {
+		return err
+	}
+
+	// Escrever GEXF
+	gexf := buildGEXF(nodeID, nodes, edges, freq)
+	if err := os.WriteFile(outputPath, []byte(gexf), 0644); err != nil {
+		return fmt.Errorf("erro ao escrever GEXF: %w", err)
+	}
+
+	// CSVs opcionais
+	if exportCSV {
+		baseDir := filepath.Dir(outputPath)
+		if err := writeEdgesCSV(filepath.Join(baseDir, "graph_edges.csv"), edges); err != nil {
 			return err
 		}
-		// Criar GEXF mínimo como placeholder
-		gexf := `<?xml version="1.0" encoding="UTF-8"?>
-<gexf xmlns="http://www.gexf.net/1.2draft" version="1.2">
-  <graph mode="static" defaultedgetype="undirected">
-    <nodes></nodes>
-    <edges></edges>
-  </graph>
-</gexf>`
-		if err := os.WriteFile(step.Output, []byte(gexf), 0644); err != nil {
-			return fmt.Errorf("erro ao criar output: %w", err)
+		if err := writeNodesCSV(filepath.Join(baseDir, "graph_nodes.csv"), nodeID, freq); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -261,10 +450,11 @@ func (e *Executor) executeTree(step *Step) error {
 	fmt.Println("   ⚠️  Tree ainda não implementado (v0.1)")
 
 	if step.Output != "" {
-		if err := e.ensureOutputDir(step.Output); err != nil {
+		outputPath := e.resolvePath(step.Output)
+		if err := e.ensureOutputDir(outputPath); err != nil {
 			return err
 		}
-		if err := os.WriteFile(step.Output, []byte("{}"), 0644); err != nil {
+		if err := os.WriteFile(outputPath, []byte("{}"), 0644); err != nil {
 			return fmt.Errorf("erro ao criar output: %w", err)
 		}
 	}
@@ -278,7 +468,8 @@ func (e *Executor) executeReport(step *Step) error {
 	fmt.Println("   ⚠️  Report ainda não implementado (v0.1)")
 
 	if step.Output != "" {
-		if err := e.ensureOutputDir(step.Output); err != nil {
+		outputPath := e.resolvePath(step.Output)
+		if err := e.ensureOutputDir(outputPath); err != nil {
 			return err
 		}
 		// Criar HTML mínimo como placeholder
@@ -293,7 +484,7 @@ func (e *Executor) executeReport(step *Step) error {
     <p>Relatório em desenvolvimento (v0.1)</p>
 </body>
 </html>`
-		if err := os.WriteFile(step.Output, []byte(html), 0644); err != nil {
+		if err := os.WriteFile(outputPath, []byte(html), 0644); err != nil {
 			return fmt.Errorf("erro ao criar output: %w", err)
 		}
 	}
@@ -309,6 +500,33 @@ func (e *Executor) ensureOutputDir(outputPath string) error {
 		}
 	}
 	return nil
+}
+
+// resolvePath resolve paths relativos ao workDir
+func (e *Executor) resolvePath(p string) string {
+	if filepath.IsAbs(p) {
+		return p
+	}
+	return filepath.Join(e.workDir, p)
+}
+
+// formatElapsed retorna uma string amigável com maior precisão temporal
+// - < 1ms: microsegundos
+// - < 1s: milissegundos com 2 casas
+// - >= 1s: segundos com 3 casas
+func formatElapsed(d time.Duration) string {
+	if d < time.Microsecond {
+		return fmt.Sprintf("%dns", d.Nanoseconds())
+	}
+	if d < time.Millisecond {
+		us := float64(d) / float64(time.Microsecond)
+		return fmt.Sprintf("%.2fµs", us)
+	}
+	if d < time.Second {
+		ms := float64(d) / float64(time.Millisecond)
+		return fmt.Sprintf("%.2fms", ms)
+	}
+	return fmt.Sprintf("%.3fs", d.Seconds())
 }
 
 // --- Auxiliares simples para lexical ---
@@ -345,12 +563,25 @@ func simpleTokenizePT(s string) []string {
 		if len(p) <= 1 {
 			continue
 		}
+		// Filtrar números puros (cantos, versos, marcadores)
+		if isNumericOnly(p) {
+			continue
+		}
 		if stop[p] {
 			continue
 		}
 		out = append(out, p)
 	}
 	return out
+}
+
+func isNumericOnly(s string) bool {
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return len(s) > 0
 }
 
 func ptStopwords() map[string]bool {
@@ -425,7 +656,9 @@ func simpleTokenizePTWithExternal(s string, stopwordsPath string) []string {
 			lines := strings.Split(string(b), "\n")
 			for _, ln := range lines {
 				w := strings.TrimSpace(strings.ToLower(ln))
-				if w != "" { base[w] = true }
+				if w != "" {
+					base[w] = true
+				}
 			}
 		}
 	}
@@ -435,15 +668,25 @@ func simpleTokenizePTWithExternal(s string, stopwordsPath string) []string {
 	parts := strings.Fields(s)
 	out := make([]string, 0, len(parts))
 	for _, p := range parts {
-		if len(p) <= 1 { continue }
-		if base[p] { continue }
+		if len(p) <= 1 {
+			continue
+		}
+		// Filtrar números puros
+		if isNumericOnly(p) {
+			continue
+		}
+		if base[p] {
+			continue
+		}
 		out = append(out, p)
 	}
 	return out
 }
 
 func writeCSVCounts(path string, m map[string]int) error {
-	if err := eEnsureDir(path); err != nil { return err }
+	if err := eEnsureDir(path); err != nil {
+		return err
+	}
 	var sb strings.Builder
 	sb.WriteString("term,count\n")
 	// deterministic order not required now; simple range
@@ -461,4 +704,69 @@ func eEnsureDir(path string) error {
 		}
 	}
 	return nil
+}
+
+// --- Graph helpers ---
+func buildGEXF(nodeID map[string]int, nodes []string, edges map[[2]string]int, freq map[string]int) string {
+	var sb strings.Builder
+	sb.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+	sb.WriteString("<gexf xmlns=\"http://www.gexf.net/1.2draft\" version=\"1.2\">\n")
+	sb.WriteString("  <graph mode=\"static\" defaultedgetype=\"undirected\">\n")
+	sb.WriteString("    <nodes>\n")
+	for _, term := range nodes {
+		id := nodeID[term]
+		w := freq[term]
+		sb.WriteString(fmt.Sprintf("      <node id=\"%d\" label=\"%s\">", id, xmlEscape(term)))
+		if w > 0 {
+			sb.WriteString("<attvalues><attvalue for=\"weight\" value=\"" + fmt.Sprint(w) + "\"/></attvalues>")
+		}
+		sb.WriteString("</node>\n")
+	}
+	sb.WriteString("    </nodes>\n")
+	sb.WriteString("    <edges>\n")
+	eid := 0
+	for pair, w := range edges {
+		src := nodeID[pair[0]]
+		dst := nodeID[pair[1]]
+		sb.WriteString(fmt.Sprintf("      <edge id=\"%d\" source=\"%d\" target=\"%d\" weight=\"%d\"/>\n", eid, src, dst, w))
+		eid++
+	}
+	sb.WriteString("    </edges>\n")
+	sb.WriteString("  </graph>\n")
+	sb.WriteString("</gexf>\n")
+	return sb.String()
+}
+
+func writeEdgesCSV(path string, edges map[[2]string]int) error {
+	if err := eEnsureDir(path); err != nil {
+		return err
+	}
+	var sb strings.Builder
+	sb.WriteString("source,target,weight\n")
+	for pair, w := range edges {
+		sb.WriteString(fmt.Sprintf("%s,%s,%d\n", pair[0], pair[1], w))
+	}
+	return os.WriteFile(path, []byte(sb.String()), 0644)
+}
+
+func writeNodesCSV(path string, nodeID map[string]int, freq map[string]int) error {
+	if err := eEnsureDir(path); err != nil {
+		return err
+	}
+	var sb strings.Builder
+	sb.WriteString("id,label,weight\n")
+	for term, id := range nodeID {
+		w := freq[term]
+		sb.WriteString(fmt.Sprintf("%d,%s,%d\n", id, term, w))
+	}
+	return os.WriteFile(path, []byte(sb.String()), 0644)
+}
+
+func xmlEscape(s string) string {
+	s = strings.ReplaceAll(s, "&", "&amp;")
+	s = strings.ReplaceAll(s, "\"", "&quot;")
+	s = strings.ReplaceAll(s, "'", "&apos;")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
+	return s
 }
