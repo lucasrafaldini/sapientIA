@@ -21,8 +21,10 @@ steps:
     output: "runs/exemplo/lexical.json"
     params:
       min_freq: 2
-      ngrams: [1, 2, 3]
+      ngrams: [2, 3]
       tfidf: true
+      export_csv: true
+      # stopwords_file: "data/stopwords_pt.txt"  # opcional
 
   - name: graph
     type: graph
