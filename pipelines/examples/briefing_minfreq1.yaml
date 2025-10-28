@@ -21,7 +21,7 @@ steps:
       ngrams: [2]
       tfidf: true
       export_csv: true
-      # stopwords_file: "data/stopwords_pt.txt" # opcional
+      stopwords_file: "data/stopwords/pt-default.txt"
 
   - name: graph
     type: graph
@@ -31,6 +31,7 @@ steps:
       cooccurrence_window: 2
       min_edge_weight: 1
       export_csv: true
+      stopwords_file: "data/stopwords/pt-default.txt"
 
   - name: tree
     type: tree

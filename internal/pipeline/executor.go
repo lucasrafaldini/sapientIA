@@ -151,7 +151,7 @@ func (e *Executor) executeLexical(step *Step) error {
 			exportCSV = v
 		}
 		if v, ok := step.Params["stopwords_file"].(string); ok {
-			stopwordsFile = v
+			stopwordsFile = e.resolvePath(v)
 		}
 		if arr, ok := step.Params["ngrams"].([]any); ok {
 			ngramsList = make([]int, 0, len(arr))
@@ -272,7 +272,7 @@ func (e *Executor) executeGraph(step *Step) error {
 			corpusPath = v
 		}
 		if v, ok := step.Params["stopwords_file"].(string); ok {
-			stopwordsFile = v
+			stopwordsFile = e.resolvePath(v)
 		}
 	}
 	if window < 2 {
