@@ -55,8 +55,8 @@ func (e *Executor) Execute() error {
 			return fmt.Errorf("step %s falhou: %w", step.Name, err)
 		}
 
-	elapsed := time.Since(start)
-	fmt.Printf("   ✅ Concluído em %s\n\n", formatElapsed(elapsed))
+		elapsed := time.Since(start)
+		fmt.Printf("   ✅ Concluído em %s\n\n", formatElapsed(elapsed))
 	}
 
 	fmt.Println("🎉 Pipeline executado com sucesso!")
@@ -158,10 +158,14 @@ func (e *Executor) executeLexical(step *Step) error {
 			for _, x := range arr {
 				switch t := x.(type) {
 				case int:
-					if t >= 1 { ngramsList = append(ngramsList, t) }
+					if t >= 1 {
+						ngramsList = append(ngramsList, t)
+					}
 				case float64:
 					iv := int(t)
-					if iv >= 1 { ngramsList = append(ngramsList, iv) }
+					if iv >= 1 {
+						ngramsList = append(ngramsList, iv)
+					}
 				}
 			}
 			if len(ngramsList) == 0 {
@@ -176,7 +180,9 @@ func (e *Executor) executeLexical(step *Step) error {
 	freq := countFreq(tokens)
 	if minFreq > 1 {
 		for k, v := range freq {
-			if v < minFreq { delete(freq, k) }
+			if v < minFreq {
+				delete(freq, k)
+			}
 		}
 	}
 	// N-grams
@@ -188,7 +194,9 @@ func (e *Executor) executeLexical(step *Step) error {
 		ng := ngrams(tokens, n)
 		if minFreq > 1 {
 			for k, v := range ng {
-				if v < minFreq { delete(ng, k) }
+				if v < minFreq {
+					delete(ng, k)
+				}
 			}
 		}
 		ngramsByN[n] = ng
@@ -224,7 +232,9 @@ func (e *Executor) executeLexical(step *Step) error {
 			}
 		}
 		for n, m := range ngramsByN {
-			if len(m) == 0 { continue }
+			if len(m) == 0 {
+				continue
+			}
 			if err := writeCSVCounts(filepath.Join(baseDir, fmt.Sprintf("lexical_ngrams_%d.csv", n)), m); err != nil {
 				return err
 			}
@@ -245,18 +255,36 @@ func (e *Executor) executeGraph(step *Step) error {
 	corpusPath := ""
 	stopwordsFile := ""
 	if step.Params != nil {
-		if v, ok := step.Params["cooccurrence_window"].(int); ok { window = v } else if fv, ok := step.Params["cooccurrence_window"].(float64); ok { window = int(fv) }
-		if v, ok := step.Params["min_edge_weight"].(int); ok { minEdge = v } else if fv, ok := step.Params["min_edge_weight"].(float64); ok { minEdge = int(fv) }
-		if v, ok := step.Params["export_csv"].(bool); ok { exportCSV = v }
-		if v, ok := step.Params["corpus"].(string); ok { corpusPath = v }
-		if v, ok := step.Params["stopwords_file"].(string); ok { stopwordsFile = v }
+		if v, ok := step.Params["cooccurrence_window"].(int); ok {
+			window = v
+		} else if fv, ok := step.Params["cooccurrence_window"].(float64); ok {
+			window = int(fv)
+		}
+		if v, ok := step.Params["min_edge_weight"].(int); ok {
+			minEdge = v
+		} else if fv, ok := step.Params["min_edge_weight"].(float64); ok {
+			minEdge = int(fv)
+		}
+		if v, ok := step.Params["export_csv"].(bool); ok {
+			exportCSV = v
+		}
+		if v, ok := step.Params["corpus"].(string); ok {
+			corpusPath = v
+		}
+		if v, ok := step.Params["stopwords_file"].(string); ok {
+			stopwordsFile = v
+		}
 	}
-	if window < 2 { window = 2 }
-	if minEdge < 1 { minEdge = 1 }
+	if window < 2 {
+		window = 2
+	}
+	if minEdge < 1 {
+		minEdge = 1
+	}
 
 	inputPath := e.resolvePath(step.Input)
 	outputPath := e.resolvePath(step.Output)
-	
+
 	// Descobrir corpus.json se não fornecido
 	if corpusPath == "" {
 		baseDir := filepath.Dir(inputPath)
@@ -282,7 +310,9 @@ func (e *Executor) executeGraph(step *Step) error {
 	} else {
 		// Fallback: usar lexical.json para nós (freq) e arestas (ngrams_2) se existir
 		lb, err := os.ReadFile(inputPath)
-		if err != nil { return fmt.Errorf("graph: erro lendo lexical '%s': %w", inputPath, err) }
+		if err != nil {
+			return fmt.Errorf("graph: erro lendo lexical '%s': %w", inputPath, err)
+		}
 		var parsed map[string]any
 		if err := json.Unmarshal(lb, &parsed); err != nil {
 			return fmt.Errorf("graph: erro parse lexical.json: %w", err)
@@ -292,8 +322,10 @@ func (e *Executor) executeGraph(step *Step) error {
 		if f, ok := parsed["freq"].(map[string]any); ok {
 			for k, v := range f {
 				switch t := v.(type) {
-				case float64: freq[k] = int(t)
-				case int: freq[k] = t
+				case float64:
+					freq[k] = int(t)
+				case int:
+					freq[k] = t
 				}
 			}
 		}
@@ -306,16 +338,22 @@ func (e *Executor) executeGraph(step *Step) error {
 		for i := 0; i < len(tokens); i++ {
 			for d := 1; d < window && i+d < len(tokens); d++ {
 				a, b := tokens[i], tokens[i+d]
-				if a == b { continue }
+				if a == b {
+					continue
+				}
 				// aresta não-direcionada com ordenação estável
-				if a > b { a, b = b, a }
+				if a > b {
+					a, b = b, a
+				}
 				edges[[2]string{a, b}]++
 			}
 		}
 	} else {
 		// Fallback: usar ngrams_2 como arestas
 		lb, err := os.ReadFile(inputPath)
-		if err != nil { return fmt.Errorf("graph: erro lendo lexical '%s': %w", inputPath, err) }
+		if err != nil {
+			return fmt.Errorf("graph: erro lendo lexical '%s': %w", inputPath, err)
+		}
 		var parsed map[string]any
 		if err := json.Unmarshal(lb, &parsed); err != nil {
 			return fmt.Errorf("graph: erro parse lexical.json: %w", err)
@@ -323,13 +361,19 @@ func (e *Executor) executeGraph(step *Step) error {
 		if ng2, ok := parsed["ngrams_2"].(map[string]any); ok {
 			for k, v := range ng2 {
 				parts := strings.Split(k, " ")
-				if len(parts) != 2 { continue }
+				if len(parts) != 2 {
+					continue
+				}
 				a, b := parts[0], parts[1]
-				if a > b { a, b = b, a }
+				if a > b {
+					a, b = b, a
+				}
 				w := 0
 				switch t := v.(type) {
-				case float64: w = int(t)
-				case int: w = t
+				case float64:
+					w = int(t)
+				case int:
+					w = t
 				}
 				if w > 0 {
 					edges[[2]string{a, b}] += w
@@ -361,7 +405,9 @@ func (e *Executor) executeGraph(step *Step) error {
 	}
 
 	// Criar diretório de output
-	if err := e.ensureOutputDir(outputPath); err != nil { return err }
+	if err := e.ensureOutputDir(outputPath); err != nil {
+		return err
+	}
 
 	// Escrever GEXF
 	gexf := buildGEXF(nodeID, nodes, edges, freq)
@@ -372,8 +418,12 @@ func (e *Executor) executeGraph(step *Step) error {
 	// CSVs opcionais
 	if exportCSV {
 		baseDir := filepath.Dir(outputPath)
-		if err := writeEdgesCSV(filepath.Join(baseDir, "graph_edges.csv"), edges); err != nil { return err }
-		if err := writeNodesCSV(filepath.Join(baseDir, "graph_nodes.csv"), nodeID, freq); err != nil { return err }
+		if err := writeEdgesCSV(filepath.Join(baseDir, "graph_edges.csv"), edges); err != nil {
+			return err
+		}
+		if err := writeNodesCSV(filepath.Join(baseDir, "graph_nodes.csv"), nodeID, freq); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -591,7 +641,9 @@ func simpleTokenizePTWithExternal(s string, stopwordsPath string) []string {
 			lines := strings.Split(string(b), "\n")
 			for _, ln := range lines {
 				w := strings.TrimSpace(strings.ToLower(ln))
-				if w != "" { base[w] = true }
+				if w != "" {
+					base[w] = true
+				}
 			}
 		}
 	}
@@ -617,7 +669,9 @@ func simpleTokenizePTWithExternal(s string, stopwordsPath string) []string {
 }
 
 func writeCSVCounts(path string, m map[string]int) error {
-	if err := eEnsureDir(path); err != nil { return err }
+	if err := eEnsureDir(path); err != nil {
+		return err
+	}
 	var sb strings.Builder
 	sb.WriteString("term,count\n")
 	// deterministic order not required now; simple range
@@ -669,7 +723,9 @@ func buildGEXF(nodeID map[string]int, nodes []string, edges map[[2]string]int, f
 }
 
 func writeEdgesCSV(path string, edges map[[2]string]int) error {
-	if err := eEnsureDir(path); err != nil { return err }
+	if err := eEnsureDir(path); err != nil {
+		return err
+	}
 	var sb strings.Builder
 	sb.WriteString("source,target,weight\n")
 	for pair, w := range edges {
@@ -679,7 +735,9 @@ func writeEdgesCSV(path string, edges map[[2]string]int) error {
 }
 
 func writeNodesCSV(path string, nodeID map[string]int, freq map[string]int) error {
-	if err := eEnsureDir(path); err != nil { return err }
+	if err := eEnsureDir(path); err != nil {
+		return err
+	}
 	var sb strings.Builder
 	sb.WriteString("id,label,weight\n")
 	for term, id := range nodeID {
