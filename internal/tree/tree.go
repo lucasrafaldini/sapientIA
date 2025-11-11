@@ -10,10 +10,10 @@ import (
 
 // Node representa um nó na árvore semântica
 type Node struct {
-	Term     string   `json:"term"`
-	Weight   float64  `json:"weight"`
-	Level    int      `json:"level"`
-	Children []*Node  `json:"children,omitempty"`
+	Term     string  `json:"term"`
+	Weight   float64 `json:"weight"`
+	Level    int     `json:"level"`
+	Children []*Node `json:"children,omitempty"`
 }
 
 // Tree representa uma árvore semântica hierárquica
@@ -25,9 +25,9 @@ type Tree struct {
 
 // Builder constrói árvores semânticas a partir de dados lexicais
 type Builder struct {
-	maxDepth   int
-	minWeight  float64
-	maxBranch  int
+	maxDepth  int
+	minWeight float64
+	maxBranch int
 }
 
 // NewBuilder cria um novo builder de árvores
@@ -129,7 +129,7 @@ func (b *Builder) buildHierarchy(weights map[string]float64, level int) *Node {
 		// Particionar termos restantes em grupos
 		remaining := items[1:]
 		numGroups := min(b.maxBranch, len(remaining))
-		
+
 		if numGroups > 0 {
 			groupSize := len(remaining) / numGroups
 			if groupSize < 1 {
@@ -142,13 +142,13 @@ func (b *Builder) buildHierarchy(weights map[string]float64, level int) *Node {
 				if i == numGroups-1 {
 					end = len(remaining)
 				}
-				
+
 				// Criar subárvore para cada grupo
 				subWeights := make(map[string]float64)
 				for _, item := range remaining[start:end] {
 					subWeights[item.term] = item.weight
 				}
-				
+
 				if child := b.buildHierarchy(subWeights, level+1); child != nil {
 					root.Children = append(root.Children, child)
 				}

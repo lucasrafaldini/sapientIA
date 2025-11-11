@@ -474,7 +474,7 @@ func (e *Executor) executeTree(step *Step) error {
 
 	// Construir árvore
 	builder := tree.NewBuilder(maxDepth)
-	
+
 	fmt.Printf("   🌲 Construindo árvore (max_depth=%d)...\n", maxDepth)
 	t, err := builder.BuildFromLexical(step.Input)
 	if err != nil {
@@ -507,7 +507,7 @@ func (e *Executor) executeTree(step *Step) error {
 	// Exportar PNG se solicitado
 	if exportPNG {
 		pngPath := strings.TrimSuffix(step.Output, ".json") + ".png"
-		
+
 		renderer := tree.NewRenderer(t)
 		if err := renderer.RenderPNG(pngPath); err != nil {
 			fmt.Printf("   ⚠️  Aviso: erro ao exportar PNG: %v\n", err)

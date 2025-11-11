@@ -213,8 +213,8 @@ func TestRenderer_EmptyTree(t *testing.T) {
 }
 
 func contains(s, substr string) bool {
-	return len(s) > 0 && len(substr) > 0 && len(s) >= len(substr) && 
-		   findSubstring(s, substr)
+	return len(s) > 0 && len(substr) > 0 && len(s) >= len(substr) &&
+		findSubstring(s, substr)
 }
 
 func findSubstring(s, substr string) bool {
