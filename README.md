@@ -66,6 +66,9 @@ go install ./cmd/sapientia
 
 # Execute um pipeline de exemplo
 sapientia run pipelines/exemplo.yaml
+
+# Escolha um perfil de stopwords (core/extended/aggressive)
+sapientia run pipelines/exemplo.yaml --stopwords extended
 ```
 
 ## Estrutura do repositório
@@ -89,17 +92,19 @@ sapientia/
 
 ## Roadmap
 
-| Versão | Foco principal                                       | Status          | Progresso           |
-| -----: | ---------------------------------------------------- | --------------- | ------------------- |
-|   v0.1 | CLI + pipeline YAML + coocorrência + export GEXF     | 🔄 Em dev       | 31% (2.17/7 issues) |
-|   v0.2 | API Go + UI web + grafos interativos                 | ⏳ Planejado    | -                   |
-|   v0.3 | χ², AFC/SVD, relatórios completos (HTML/PDF)         | ⏳ Planejado    | -                   |
-|   v1.0 | Binário único (Go + worker embutido + model manager) | 🎯 Meta release | -                   |
-|  v5/v6 | LLMs para insights/assistência analítica             | 🔮 Longo prazo  | -                   |
+| Versão | Foco principal                                       | Status          | Progresso        |
+| -----: | ---------------------------------------------------- | --------------- | ---------------- |
+|   v0.1 | CLI + pipeline YAML + coocorrência + export GEXF     | 🔄 Em dev       | 43% (3/7 issues) |
+|   v0.2 | API Go + UI web + grafos interativos                 | ⏳ Planejado    | -                |
+|   v0.3 | χ², AFC/SVD, relatórios completos (HTML/PDF)         | ⏳ Planejado    | -                |
+|   v1.0 | Binário único (Go + worker embutido + model manager) | 🎯 Meta release | -                |
+|  v5/v6 | LLMs para insights/assistência analítica             | 🔮 Longo prazo  | -                |
 
 ### v0.1 - Issues Concluídas
 
 - ✅ **#1**: CLI 'sapientia run' + parser de pipeline YAML + executor ([PR #8](https://github.com/lucasrafaldini/sapientIA/pull/8))
+- ✅ **#2**: Léxico básico (freq, n-grams, TF-IDF) com stopwords e CSV ([PR #9](https://github.com/lucasrafaldini/sapientIA/pull/9))
+- ✅ **#3**: Grafo de coocorrência + export GEXF/CSV com stopwords configuráveis ([PR #10](https://github.com/lucasrafaldini/sapientIA/pull/10))
 
 ➡️ Veja o roadmap completo e critérios por versão em [ROADMAP.md](ROADMAP.md).  
 📋 Acompanhe o progresso da v0.1 no [Project Board](https://github.com/users/lucasrafaldini/projects/1).  
@@ -111,21 +116,34 @@ sapientia/
 # 1) Rodar pipeline completo (briefing → perguntas → entrevistas → árvores → relatório)
 sapientia run pipelines/cliente-x.yaml
 
-# 2) Gerar só a árvore do briefing
+# 2) Rodar com perfil de stopwords específico (core, extended, aggressive)
+sapientia run pipelines/cliente-x.yaml --stopwords extended
+
+# 3) Gerar só a árvore do briefing
 sapientia briefing build --audio data/briefing/gravacao.mp3 --out runs/cliente-x/
 
-# 3) Sugerir ~10 perguntas com cobertura de ramos
+# 4) Sugerir ~10 perguntas com cobertura de ramos
 sapientia questions make --tree runs/cliente-x/briefing_tree.json --target 10
 
-# 4) Ingerir entrevistas em lote
+# 5) Ingerir entrevistas em lote
 sapientia interviews ingest --csv data/entrevistas/respostas.csv
 
-# 5) Gerar árvore por pergunta
+# 6) Gerar árvore por pergunta
 sapientia question-tree build --question-id Q3 --out runs/cliente-x/Q3/
 
-# 6) Montar relatório final
+# 7) Montar relatório final
 sapientia report build --workspace runs/cliente-x/ --format html,pdf
 ```
+
+### Stopwords
+
+O SapientIA inclui três perfis de stopwords pt-BR:
+
+- **core** (padrão): artigos, pronomes, preposições, conjunções
+- **extended**: core + advérbios frequentes e auxiliares (ser, estar, ter, haver)
+- **aggressive**: extended + verbos de alta frequência (fazer, dizer, ir, poder, etc.)
+
+Use `--stopwords` para sobrescrever o perfil em qualquer pipeline. Veja [data/stopwords/README.md](data/stopwords/README.md) para detalhes.
 
 ## ⚖️ Licença
 

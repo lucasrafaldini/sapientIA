@@ -1,16 +1,16 @@
 # Status do Roadmap v0.1
 
-**Data de atualização**: 2025-10-21, 21:15  
+**Data de atualização**: 2025-10-27, 21:15  
 **Milestone**: v0.1 (Alpha)  
 **Prazo**: 2025-11-30
 
 ## Progresso Geral
 
 ```
-v0.1: ███████░░░░░░░░ 31% (2,17/7 issues concluídas)
+v0.1: █████████░░░░░░ 43% (3/7 issues concluídas)
 ```
 
-**Issues finalizadas**: 1 (#1)  
+**Issues finalizadas**: 3 (#1, #2, #3)  
 **Issues quase completas**: 1 (#6 @ 80%)  
 **Issues pendentes**: 5
 
@@ -60,25 +60,35 @@ v0.1: ███████░░░░░░░░ 31% (2,17/7 issues concluíd
 
 ---
 
-### ⚪ Análise Lexical - NÃO INICIADO
+### ✅ Análise Lexical - CONCLUÍDO
 
-#### #2: Léxico básico (freq, n-grams, TF-IDF) - ⚪ NÃO INICIADO
+#### #2: Léxico básico (freq, n-grams, TF-IDF) - ✅ CONCLUÍDO
 
-- **Status**: OPEN
+- **Status**: COMPLETO
 - **Labels**: area:core, kind:feature
-- **Progresso**: 0%
-- **Próximos passos**: Implementar `internal/lexical/`
+- **Progresso**: 100%
+- **Concluído em**: 2025-10-24
+- **Detalhes**:
+  - Tokenizador pt-BR com stopwords e filtro numérico (evita cantos/versos)
+  - Freq, n-grams configuráveis, TF-IDF por documento
+  - Export JSON + CSV opcionais; params: min_freq, ngrams, tfidf, stopwords_file
+  - Testes unitários + E2E cobrindo pipelines de exemplo
 
 ---
 
-### ⚪ Grafos - NÃO INICIADO
+### ✅ Grafos - CONCLUÍDO
 
-#### #3: Grafo de coocorrência + export GEXF/GraphML/CSV/JSON - ⚪ NÃO INICIADO
+#### #3: Grafo de coocorrência + export GEXF/CSV - ✅ CONCLUÍDO
 
-- **Status**: OPEN
+- **Status**: COMPLETO
 - **Labels**: area:core, kind:feature
-- **Progresso**: 0%
-- **Próximos passos**: Implementar `internal/graph/`
+- **Progresso**: 100%
+- **Concluído em**: 2025-10-27
+- **Detalhes**:
+  - Coocorrência com janela configurável e peso mínimo de aresta
+  - GEXF com pesos; CSVs de nós/arestas opcionais
+  - Integração com pipeline, usando corpus/tokenização compartilhada
+  - E2E em corpora grandes (Os Lusíadas, Divina Comédia)
 
 ---
 
@@ -144,16 +154,9 @@ TOTAL v0.1:  [██░░░░░░░░] 18%
    - `deployments/Dockerfile.python`
    - `deployments/Dockerfile.nextjs`
 
-3. **Issue #2**: Implementar módulo lexical básico
+3. **Issue #2**: — CONCLUÍDO
 
-   - Frequências
-   - N-grams
-   - TF-IDF
-
-4. **Issue #3**: Implementar grafos de coocorrência
-
-   - Matriz de coocorrência
-   - Export GEXF/GraphML
+4. **Issue #3**: — CONCLUÍDO
 
 5. **Issue #7**: Criar smoke test de pipeline
 

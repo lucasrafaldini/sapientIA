@@ -1,0 +1,44 @@
+name: exemplo-briefing-minfreq1
+description: Pipeline com min_freq=1 para validar CSV completo
+version: "0.1"
+
+config:
+  output_dir: "runs/exemplo_mf1"
+  language: "pt-BR"
+
+steps:
+  - name: ingest
+    type: ingest
+    input: "data/examples/briefing2.txt"
+    output: "runs/exemplo_mf1/corpus.json"
+
+  - name: lexical
+    type: lexical
+    input: "runs/exemplo_mf1/corpus.json"
+    output: "runs/exemplo_mf1/lexical.json"
+    params:
+      min_freq: 1
+      ngrams: [2]
+      tfidf: true
+      export_csv: true
+      stopwords_file: "data/stopwords/pt-default.txt"
+
+  - name: graph
+    type: graph
+    input: "runs/exemplo_mf1/lexical.json"
+    output: "runs/exemplo_mf1/graph.gexf"
+    params:
+      cooccurrence_window: 2
+      min_edge_weight: 1
+      export_csv: true
+      stopwords_file: "data/stopwords/pt-default.txt"
+
+  - name: tree
+    type: tree
+    input: "runs/exemplo_mf1/lexical.json"
+    output: "runs/exemplo_mf1/tree.json"
+
+  - name: report
+    type: report
+    input: "runs/exemplo_mf1"
+    output: "runs/exemplo_mf1/report.html"
