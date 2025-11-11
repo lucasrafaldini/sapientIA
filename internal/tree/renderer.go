@@ -103,28 +103,28 @@ func (r *Renderer) renderNode(svg *bytes.Buffer, node *Node, x, y, spread float6
 			childX = math.Max(80, math.Min(r.width-80, childX))
 			
 			// Desenhar aresta
-			svg.WriteString(fmt.Sprintf(`  <line class="edge" x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f"/>
-`, x, y+radius, childX, childY-radius))
+			fmt.Fprintf(svg, `  <line class="edge" x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f"/>
+`, x, y+radius, childX, childY-radius)
 			
 			// Renderizar filho recursivamente
 			r.renderNode(svg, child, childX, childY, r.nodeSpacing)
 		}
 	}
 	// Desenhar nó atual
-	svg.WriteString(fmt.Sprintf(`  <circle class="node" cx="%.2f" cy="%.2f" r="%.2f"/>
-`, x, y, radius))
+	fmt.Fprintf(svg, `  <circle class="node" cx="%.2f" cy="%.2f" r="%.2f"/>
+`, x, y, radius)
 	
 	// Desenhar texto do termo (quebrar se muito longo)
 	term := node.Term
 	if len(term) > 15 {
 		term = term[:12] + "..."
 	}
-	svg.WriteString(fmt.Sprintf(`  <text class="node-text" x="%.2f" y="%.2f">%s</text>
-`, x, y+5, escapeXML(term)))
+	fmt.Fprintf(svg, `  <text class="node-text" x="%.2f" y="%.2f">%s</text>
+`, x, y+5, escapeXML(term))
 	
 	// Desenhar peso abaixo do nó
-	svg.WriteString(fmt.Sprintf(`  <text class="weight-text" x="%.2f" y="%.2f">%.3f</text>
-`, x, y+radius+15, node.Weight))
+	fmt.Fprintf(svg, `  <text class="weight-text" x="%.2f" y="%.2f">%.3f</text>
+`, x, y+radius+15, node.Weight)
 }
 
 // calculateDimensions calcula dimensões necessárias baseado na árvore
@@ -187,7 +187,11 @@ func (r *Renderer) RenderPNG(pngPath string) error {
 	if err != nil {
 		return fmt.Errorf("erro ao criar arquivo PNG: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+		if cerr := f.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("erro ao fechar arquivo PNG: %w", cerr)
+		}
+	}()
 
 	if err := png.Encode(f, img); err != nil {
 		return fmt.Errorf("erro ao codificar PNG: %w", err)
@@ -307,7 +311,9 @@ func (r *Renderer) drawText(img *image.RGBA, x, y int, text string, col color.Co
 		Size: 13,
 		DPI:  72,
 	})
-	defer face.Close()
+	defer func() {
+		_ = face.Close() // Ignora erro de Close() propositalmente
+	}()
 	
 	// Calcular largura do texto para centralizar
 	d := &font.Drawer{
