@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/lucasrafaldini/sapientIA/internal/tree"
 )
 
 // Executor executa um pipeline completo
@@ -447,17 +449,73 @@ func (e *Executor) executeGraph(step *Step) error {
 func (e *Executor) executeTree(step *Step) error {
 	fmt.Printf("   📥 Input: %s\n", step.Input)
 	fmt.Printf("   📤 Output: %s\n", step.Output)
-	fmt.Println("   ⚠️  Tree ainda não implementado (v0.1)")
 
+	if step.Input == "" {
+		return fmt.Errorf("input é obrigatório para step tree")
+	}
+
+	// Parâmetros
+	maxDepth := 3
+	if md, ok := step.Params["max_depth"].(float64); ok {
+		maxDepth = int(md)
+	} else if md, ok := step.Params["max_depth"].(int); ok {
+		maxDepth = md
+	}
+
+	exportSVG := false
+	if v, ok := step.Params["export_svg"].(bool); ok {
+		exportSVG = v
+	}
+
+	exportPNG := false
+	if v, ok := step.Params["export_png"].(bool); ok {
+		exportPNG = v
+	}
+
+	// Construir árvore
+	builder := tree.NewBuilder(maxDepth)
+
+	fmt.Printf("   🌲 Construindo árvore (max_depth=%d)...\n", maxDepth)
+	t, err := builder.BuildFromLexical(step.Input)
+	if err != nil {
+		return fmt.Errorf("erro ao construir árvore: %w", err)
+	}
+
+	// Salvar JSON
 	if step.Output != "" {
 		outputPath := e.resolvePath(step.Output)
 		if err := e.ensureOutputDir(outputPath); err != nil {
 			return err
 		}
-		if err := os.WriteFile(outputPath, []byte("{}"), 0644); err != nil {
-			return fmt.Errorf("erro ao criar output: %w", err)
+		if err := t.SaveJSON(step.Output); err != nil {
+			return fmt.Errorf("erro ao salvar JSON: %w", err)
+		}
+		fmt.Printf("   💾 Árvore salva: %s\n", step.Output)
+	}
+
+	// Exportar SVG se solicitado
+	if exportSVG {
+		svgPath := strings.TrimSuffix(step.Output, ".json") + ".svg"
+		renderer := tree.NewRenderer(t)
+		if err := renderer.RenderSVG(svgPath); err != nil {
+			fmt.Printf("   ⚠️  Aviso: erro ao exportar SVG: %v\n", err)
+		} else {
+			fmt.Printf("   🖼️  SVG exportado: %s\n", svgPath)
 		}
 	}
+
+	// Exportar PNG se solicitado
+	if exportPNG {
+		pngPath := strings.TrimSuffix(step.Output, ".json") + ".png"
+
+		renderer := tree.NewRenderer(t)
+		if err := renderer.RenderPNG(pngPath); err != nil {
+			fmt.Printf("   ⚠️  Aviso: erro ao exportar PNG: %v\n", err)
+		} else {
+			fmt.Printf("   🖼️  PNG exportado: %s\n", pngPath)
+		}
+	}
+
 	return nil
 }
 

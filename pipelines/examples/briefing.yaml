@@ -42,6 +42,8 @@ steps:
     output: "runs/exemplo/tree.json"
     params:
       max_depth: 3
+      export_svg: true
+      export_png: true
 
   - name: report
     type: report

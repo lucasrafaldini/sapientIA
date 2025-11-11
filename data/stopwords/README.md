@@ -39,6 +39,7 @@ params:
 ```
 
 **Ordem de prioridade:**
+
 1. Se o YAML especifica `stopwords_file` → usa o arquivo do YAML
 2. Se não especifica → aplica o perfil da flag `--stopwords` (padrão: `core`)
 

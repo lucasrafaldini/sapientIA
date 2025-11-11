@@ -37,6 +37,10 @@ steps:
     type: tree
     input: "runs/divina_comedia/lexical.json"
     output: "runs/divina_comedia/tree.json"
+    params:
+      max_depth: 3
+      export_svg: true
+      export_png: true
 
   - name: report
     type: report
