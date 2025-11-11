@@ -507,10 +507,9 @@ func (e *Executor) executeTree(step *Step) error {
 	// Exportar PNG se solicitado
 	if exportPNG {
 		pngPath := strings.TrimSuffix(step.Output, ".json") + ".png"
-		svgPath := strings.TrimSuffix(step.Output, ".json") + ".svg"
 		
 		renderer := tree.NewRenderer(t)
-		if err := renderer.RenderPNG(svgPath, pngPath); err != nil {
+		if err := renderer.RenderPNG(pngPath); err != nil {
 			fmt.Printf("   ⚠️  Aviso: erro ao exportar PNG: %v\n", err)
 		} else {
 			fmt.Printf("   🖼️  PNG exportado: %s\n", pngPath)
