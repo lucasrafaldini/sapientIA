@@ -4,10 +4,18 @@ package tree
 import (
 	"bytes"
 	"fmt"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
 	"math"
 	"os"
-	"os/exec"
 	"strings"
+
+	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/goregular"
+	"golang.org/x/image/math/fixed"
 )
 
 // Renderer renderiza árvores em diferentes formatos
@@ -24,8 +32,8 @@ type Renderer struct {
 func NewRenderer(tree *Tree) *Renderer {
 	return &Renderer{
 		tree:         tree,
-		nodeSpacing:  120,
-		levelSpacing: 80,
+		nodeSpacing:  150,  // Reduzido de 200 para 150 (menos espaço horizontal)
+		levelSpacing: 250,  // Aumentado de 150 para 250 (muito mais espaço vertical)
 		fontSize:     14,
 		width:        1200,
 		height:       800,
@@ -77,30 +85,31 @@ func (r *Renderer) renderNode(svg *bytes.Buffer, node *Node, x, y, spread float6
 		return
 	}
 
-	radius := 30.0 + node.Weight*20
+	radius := 40.0 + node.Weight*30  // Aumentado para nós maiores e mais visíveis
 	
 	// Desenhar arestas para filhos primeiro (para ficarem atrás)
 	if len(node.Children) > 0 {
 		childY := y + r.levelSpacing
 		numChildren := len(node.Children)
-		childSpread := spread / 2
+		
+		// Calcular largura total necessária para os filhos
+		totalWidth := float64(numChildren-1) * r.nodeSpacing
+		startX := x - totalWidth/2
 		
 		for i, child := range node.Children {
-			offset := float64(i) - float64(numChildren-1)/2
-			childX := x + offset*r.nodeSpacing
+			childX := startX + float64(i)*r.nodeSpacing
 			
-			// Limitar posição horizontal
-			childX = math.Max(50, math.Min(r.width-50, childX))
+			// Limitar posição horizontal com margem
+			childX = math.Max(80, math.Min(r.width-80, childX))
 			
 			// Desenhar aresta
 			svg.WriteString(fmt.Sprintf(`  <line class="edge" x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f"/>
 `, x, y+radius, childX, childY-radius))
 			
 			// Renderizar filho recursivamente
-			r.renderNode(svg, child, childX, childY, childSpread)
+			r.renderNode(svg, child, childX, childY, r.nodeSpacing)
 		}
 	}
-	
 	// Desenhar nó atual
 	svg.WriteString(fmt.Sprintf(`  <circle class="node" cx="%.2f" cy="%.2f" r="%.2f"/>
 `, x, y, radius))
@@ -120,53 +129,211 @@ func (r *Renderer) renderNode(svg *bytes.Buffer, node *Node, x, y, spread float6
 
 // calculateDimensions calcula dimensões necessárias baseado na árvore
 func (r *Renderer) calculateDimensions(node *Node) {
-	// Contar níveis e largura máxima
+	// Contar níveis e nós por nível
 	maxLevel := 0
-	var countNodes func(*Node, int) int
-	countNodes = func(n *Node, level int) int {
+	nodesPerLevel := make(map[int]int)
+	
+	var countNodes func(*Node, int)
+	countNodes = func(n *Node, level int) {
 		if n == nil {
-			return 0
+			return
 		}
 		if level > maxLevel {
 			maxLevel = level
 		}
-		count := 1
+		nodesPerLevel[level]++
 		for _, child := range n.Children {
-			count += countNodes(child, level+1)
+			countNodes(child, level+1)
 		}
-		return count
 	}
 	
-	totalNodes := countNodes(node, 0)
+	countNodes(node, 0)
 	
-	// Ajustar dimensões
-	r.height = float64(maxLevel+1)*r.levelSpacing + 100
-	r.width = math.Max(800, float64(totalNodes)*r.nodeSpacing/2)
+	// Calcular largura máxima necessária baseada no nível com mais nós
+	maxNodesInLevel := 0
+	for _, count := range nodesPerLevel {
+		if count > maxNodesInLevel {
+			maxNodesInLevel = count
+		}
+	}
+	
+	// Ajustar dimensões priorizando altura (layout vertical)
+	r.height = float64(maxLevel+1)*r.levelSpacing + 200  // Aumentada margem vertical
+	r.width = math.Max(1000, float64(maxNodesInLevel)*r.nodeSpacing+150)  // Reduzida largura
 }
 
-// RenderPNG gera visualização PNG da árvore (requer ImageMagick/rsvg-convert)
-func (r *Renderer) RenderPNG(svgPath, pngPath string) error {
-	// Primeiro gerar SVG temporário se não existe
-	tempSVG := svgPath
-	if svgPath == "" {
-		tempSVG = pngPath + ".tmp.svg"
-		if err := r.RenderSVG(tempSVG); err != nil {
-			return err
-		}
-		defer os.Remove(tempSVG)
+// RenderPNG gera visualização PNG da árvore usando stdlib do Go
+func (r *Renderer) RenderPNG(pngPath string) error {
+	if r.tree.Root == nil {
+		return fmt.Errorf("árvore vazia")
 	}
 
-	// Tentar rsvg-convert primeiro (mais comum em Linux/Mac)
-	cmd := exec.Command("rsvg-convert", tempSVG, "-o", pngPath)
-	if err := cmd.Run(); err != nil {
-		// Se falhar, tentar ImageMagick
-		cmd = exec.Command("convert", tempSVG, pngPath)
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("erro ao converter SVG->PNG (instale rsvg-convert ou ImageMagick): %w", err)
-		}
+	// Calcular dimensões
+	r.calculateDimensions(r.tree.Root)
+
+	// Criar imagem
+	img := image.NewRGBA(image.Rect(0, 0, int(r.width), int(r.height)))
+	
+	// Background branco
+	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
+
+	// Renderizar árvore
+	x := r.width / 2
+	y := r.height - 40.0
+	r.renderNodeImage(img, r.tree.Root, x, y, r.width/2)
+
+	// Salvar PNG
+	f, err := os.Create(pngPath)
+	if err != nil {
+		return fmt.Errorf("erro ao criar arquivo PNG: %w", err)
+	}
+	defer f.Close()
+
+	if err := png.Encode(f, img); err != nil {
+		return fmt.Errorf("erro ao codificar PNG: %w", err)
 	}
 
 	return nil
+}
+
+// renderNodeImage renderiza um nó usando image/draw
+func (r *Renderer) renderNodeImage(img *image.RGBA, node *Node, x, y, spread float64) {
+	if node == nil {
+		return
+	}
+
+	radius := 40.0 + node.Weight*30  // Aumentado para nós maiores e mais visíveis
+
+	// Desenhar filhos primeiro (para ficarem atrás)
+	if len(node.Children) > 0 {
+		childY := y - r.levelSpacing
+		numChildren := len(node.Children)
+		
+		// Calcular largura total necessária para os filhos
+		totalWidth := float64(numChildren-1) * r.nodeSpacing
+		startX := x - totalWidth/2
+
+		for i, child := range node.Children {
+			childX := startX + float64(i)*r.nodeSpacing
+
+			// Limitar posição horizontal com margem
+			childX = math.Max(80, math.Min(r.width-80, childX))
+
+			// Desenhar linha
+			r.drawLine(img, int(x), int(y-radius), int(childX), int(childY+radius), color.RGBA{136, 136, 136, 255})
+
+			// Renderizar filho recursivamente
+			r.renderNodeImage(img, child, childX, childY, r.nodeSpacing)
+		}
+	}
+	// Desenhar círculo do nó
+	r.drawCircle(img, int(x), int(y), int(radius), color.RGBA{74, 144, 226, 255}, color.RGBA{46, 92, 138, 255})
+
+	// Desenhar texto do termo
+	term := node.Term
+	if len(term) > 15 {
+		term = term[:12] + "..."
+	}
+	r.drawText(img, int(x), int(y), term, color.White)
+
+	// Desenhar peso
+	weightText := fmt.Sprintf("%.3f", node.Weight)
+	r.drawText(img, int(x), int(y)-int(radius)-10, weightText, color.RGBA{136, 136, 136, 255})
+}
+
+// drawCircle desenha um círculo preenchido com borda
+func (r *Renderer) drawCircle(img *image.RGBA, cx, cy, radius int, fill, stroke color.Color) {
+	// Desenhar círculo preenchido
+	for y := -radius; y <= radius; y++ {
+		for x := -radius; x <= radius; x++ {
+			if x*x+y*y <= radius*radius {
+				img.Set(cx+x, cy+y, fill)
+			}
+		}
+	}
+	
+	// Desenhar borda
+	thickness := 2
+	for y := -radius-thickness; y <= radius+thickness; y++ {
+		for x := -radius-thickness; x <= radius+thickness; x++ {
+			dist := x*x + y*y
+			if dist > (radius-thickness)*(radius-thickness) && dist <= (radius+thickness)*(radius+thickness) {
+				img.Set(cx+x, cy+y, stroke)
+			}
+		}
+	}
+}
+
+// drawLine desenha uma linha usando algoritmo de Bresenham
+func (r *Renderer) drawLine(img *image.RGBA, x0, y0, x1, y1 int, col color.Color) {
+	dx := abs(x1 - x0)
+	dy := abs(y1 - y0)
+	sx, sy := 1, 1
+	if x0 > x1 {
+		sx = -1
+	}
+	if y0 > y1 {
+		sy = -1
+	}
+	err := dx - dy
+
+	for {
+		img.Set(x0, y0, col)
+		if x0 == x1 && y0 == y1 {
+			break
+		}
+		e2 := 2 * err
+		if e2 > -dy {
+			err -= dy
+			x0 += sx
+		}
+		if e2 < dx {
+			err += dx
+			y0 += sy
+		}
+	}
+}
+
+// drawText desenha texto centralizado usando fonte TrueType com suporte UTF-8
+func (r *Renderer) drawText(img *image.RGBA, x, y int, text string, col color.Color) {
+	// Parse da fonte TrueType
+	ttf, err := truetype.Parse(goregular.TTF)
+	if err != nil {
+		return // Silenciosamente falha se não conseguir carregar fonte
+	}
+	
+	// Criar face com tamanho 13
+	face := truetype.NewFace(ttf, &truetype.Options{
+		Size: 13,
+		DPI:  72,
+	})
+	defer face.Close()
+	
+	// Calcular largura do texto para centralizar
+	d := &font.Drawer{
+		Dst:  img,
+		Src:  image.NewUniform(col),
+		Face: face,
+	}
+	
+	textBounds := d.MeasureString(text)
+	textWidth := textBounds.Round()
+	
+	point := fixed.Point26_6{
+		X: fixed.Int26_6(x*64) - fixed.Int26_6(textWidth*32),
+		Y: fixed.Int26_6(y * 64),
+	}
+	
+	d.Dot = point
+	d.DrawString(text)
+}
+
+// abs retorna o valor absoluto
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // escapeXML escapa caracteres especiais para XML
